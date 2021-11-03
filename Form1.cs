@@ -13,10 +13,11 @@ using static task7.Polyhedrons;
 
 namespace task7
 {
+    enum Mode { Move = 1, Rotate, Scale }
     public partial class Form1 : Form
     {
         Bitmap pic;
-        ActType at;
+        Mode md;
         bool mDown;
         Point curP;
         Mesh mesh;
@@ -60,11 +61,8 @@ namespace task7
         double[,] lastMatrix;
 
         bool from_c;
-
+        bool need_axis;
         int edit_mode;
-
-        double rotateAngleL;
-        double currotateAngleL;
 
         public Form1()
         {
@@ -85,7 +83,9 @@ namespace task7
             transformAxis = new bool[3] { false, false, false };
             pic = new Bitmap(pictureBox1.Width, pictureBox1.Height);
             pictureBox1.Image = pic;
-            at = ActType.Move;
+            md = Mode.Move;
+            moveButton.Checked = true;
+            need_axis = true;
             zeroPoint = new Point3D(pictureBox1.Width / 2, pictureBox1.Height / 2, 0, 0);
             mDown = false;
             mesh = Tetrahedron(100);
@@ -97,6 +97,7 @@ namespace task7
             DrawScene(pic);
             form_loaded = true;
             from_c = false;
+            
         }
 
         private void comboBox1_SelectedIndexChanged(object sender, EventArgs e)
@@ -105,6 +106,7 @@ namespace task7
             curMesh = comboBox1.Text;
             pic = new Bitmap(pictureBox1.Width, pictureBox1.Height);
             pictureBox1.Image = pic;
+            need_axis = true;
             ResetAthene();
             defineLocalAxis();
             SetMesh();
@@ -202,540 +204,6 @@ namespace task7
             return ans;
         }
 
-        ////  x->   y ^    z .
-        //Mesh Tetrahedron(int scale)
-        //{
-        //    Mesh ans = new Mesh();
-        //    int counter = 0;
-        //    scale = scale / 2;
-        //    ans.points.Add(new Point3D(-scale, scale, -scale, counter++));
-        //    ans.points.Add(new Point3D(scale, scale, scale, counter++));
-        //    ans.points.Add(new Point3D(scale, -scale, -scale, counter++));
-        //    ans.points.Add(new Point3D(-scale, -scale, scale, counter++));
-        //    List<int> l1 = new List<int>();
-        //    l1.Add(1);
-        //    l1.Add(2);
-        //    l1.Add(3);
-        //    ans.connections.Add(0, l1);
-
-        //    List<int> l2 = new List<int>();
-        //    l2.Add(0);
-        //    l2.Add(2);
-        //    l2.Add(3);
-        //    ans.connections.Add(1, l2);
-
-        //    List<int> l3 = new List<int>();
-        //    l3.Add(0);
-        //    l3.Add(1);
-        //    l3.Add(3);
-        //    ans.connections.Add(2, l3);
-
-        //    List<int> l4 = new List<int>();
-        //    l4.Add(0);
-        //    l4.Add(1);
-        //    l4.Add(2);
-        //    ans.connections.Add(3, l4);
-        //    return ans;
-        //}
-        //Mesh Hexahedron(int scale)
-        //{
-        //    Mesh ans = new Mesh();
-        //    int counter = 0;
-        //    scale = scale / 2;
-        //    ans.points.Add(new Point3D(-scale, scale, -scale, counter++));
-        //    ans.points.Add(new Point3D(scale, scale, -scale, counter++));
-        //    ans.points.Add(new Point3D(scale, -scale, -scale, counter++));
-        //    ans.points.Add(new Point3D(-scale, -scale, -scale, counter++));
-        //    ans.points.Add(new Point3D(-scale, scale, scale, counter++));
-        //    ans.points.Add(new Point3D(scale, scale, scale, counter++));
-        //    ans.points.Add(new Point3D(scale, -scale, scale, counter++));
-        //    ans.points.Add(new Point3D(-scale, -scale, scale, counter++));
-
-        //    List<int> l = new List<int>();
-        //    l.Add(1);
-        //    l.Add(3);
-        //    l.Add(4);
-        //    ans.connections.Add(0, l);
-
-        //    l = new List<int>();
-        //    l.Add(0);
-        //    l.Add(2);
-        //    l.Add(5);
-        //    ans.connections.Add(1, l);
-
-        //    l = new List<int>();
-        //    l.Add(1);
-        //    l.Add(3);
-        //    l.Add(6);
-        //    ans.connections.Add(2, l);
-
-        //    l = new List<int>();
-        //    l.Add(0);
-        //    l.Add(2);
-        //    l.Add(7);
-        //    ans.connections.Add(3, l);
-
-        //    l = new List<int>();
-        //    l.Add(0);
-        //    l.Add(5);
-        //    l.Add(7);
-        //    ans.connections.Add(4, l);
-
-        //    l = new List<int>();
-        //    l.Add(1);
-        //    l.Add(4);
-        //    l.Add(6);
-        //    ans.connections.Add(5, l);
-
-        //    l = new List<int>();
-        //    l.Add(2);
-        //    l.Add(5);
-        //    l.Add(7);
-        //    ans.connections.Add(6, l);
-
-        //    l = new List<int>();
-        //    l.Add(3);
-        //    l.Add(4);
-        //    l.Add(6);
-        //    ans.connections.Add(7, l);
-
-        //    return ans;
-        //}
-        //Mesh Octahedron(int scale)
-        //{
-        //    Mesh ans = new Mesh();
-        //    int counter = 0;
-        //    scale = scale / 2;
-        //    ans.points.Add(new Point3D(0, 0, -scale, counter++));
-        //    ans.points.Add(new Point3D(-scale, 0, 0, counter++));
-        //    ans.points.Add(new Point3D(0, scale, 0, counter++));
-        //    ans.points.Add(new Point3D(scale, 0, 0, counter++));
-        //    ans.points.Add(new Point3D(0, -scale, 0, counter++));
-        //    ans.points.Add(new Point3D(0, 0, scale, counter++));
-
-        //    List<int> l = new List<int>();
-        //    l.Add(1);
-        //    l.Add(2);
-        //    l.Add(3);
-        //    l.Add(4);
-        //    ans.connections.Add(0, l);
-
-        //    l = new List<int>();
-        //    l.Add(0);
-        //    l.Add(2);
-        //    l.Add(4);
-        //    l.Add(5);
-        //    ans.connections.Add(1, l);
-
-        //    l = new List<int>();
-        //    l.Add(0);
-        //    l.Add(1);
-        //    l.Add(3);
-        //    l.Add(5);
-        //    ans.connections.Add(2, l);
-
-        //    l = new List<int>();
-        //    l.Add(0);
-        //    l.Add(2);
-        //    l.Add(4);
-        //    l.Add(5);
-        //    ans.connections.Add(3, l);
-
-        //    l = new List<int>();
-        //    l.Add(0);
-        //    l.Add(1);
-        //    l.Add(3);
-        //    l.Add(5);
-        //    ans.connections.Add(4, l);
-
-        //    l = new List<int>();
-        //    l.Add(1);
-        //    l.Add(2);
-        //    l.Add(3);
-        //    l.Add(4);
-        //    ans.connections.Add(5, l);
-
-        //    return ans;
-        //}
-
-        //Mesh Icosahedron(int scale)
-        //{
-        //    Mesh ans = new Mesh();
-        //    int counter = 0;
-        //    scale = scale / 2;
-        //    ans.points.Add(new Point3D(0, 0, (float)Math.Sqrt(5) / 2 * scale, counter++));
-        //    for (int i = 0; i < 5; i++)
-        //        ans.points.Add(new Point3D(scale * (float)(Math.Cos(2 * i * 72 * Math.PI / 360)),
-        //                                   scale * (float)(Math.Sin(2 * i * 72 * Math.PI / 360)),
-        //                                   scale * (float)0.5, counter++));
-        //    for (int i = 0; i < 5; i++)
-        //        ans.points.Add(new Point3D(scale * (float)(Math.Cos(2 * (36 + i * 72) * Math.PI / 360)),
-        //                                   scale * (float)(Math.Sin(2 * (36 + i * 72) * Math.PI / 360)),
-        //                                   scale * (float)0.5 * (-1), counter++));
-        //    ans.points.Add(new Point3D(0, 0, -(float)Math.Sqrt(5) / 2 * scale, counter++));
-
-        //    List<int> l = new List<int>();
-        //    l.Add(1);
-        //    l.Add(2);
-        //    l.Add(3);
-        //    l.Add(4);
-        //    l.Add(5);
-        //    ans.connections.Add(0, l);
-
-        //    l = new List<int>();
-        //    l.Add(0);
-        //    l.Add(5);
-        //    l.Add(2);
-        //    l.Add(10);
-        //    l.Add(6);
-        //    ans.connections.Add(1, l);
-
-        //    l = new List<int>();
-        //    l.Add(0);
-        //    l.Add(1);
-        //    l.Add(3);
-        //    l.Add(6);
-        //    l.Add(7);
-        //    ans.connections.Add(2, l);
-
-        //    l = new List<int>();
-        //    l.Add(0);
-        //    l.Add(2);
-        //    l.Add(4);
-        //    l.Add(7);
-        //    l.Add(8);
-        //    ans.connections.Add(3, l);
-
-        //    l = new List<int>();
-        //    l.Add(0);
-        //    l.Add(3);
-        //    l.Add(5);
-        //    l.Add(8);
-        //    l.Add(9);
-        //    ans.connections.Add(4, l);
-
-        //    l = new List<int>();
-        //    l.Add(0);
-        //    l.Add(4);
-        //    l.Add(1);
-        //    l.Add(9);
-        //    l.Add(10);
-        //    ans.connections.Add(5, l);
-
-        //    l = new List<int>();
-        //    l.Add(11);
-        //    l.Add(1);
-        //    l.Add(2);
-        //    l.Add(10);
-        //    l.Add(7);
-        //    ans.connections.Add(6, l);
-
-        //    l = new List<int>();
-        //    l.Add(11);
-        //    l.Add(2);
-        //    l.Add(3);
-        //    l.Add(6);
-        //    l.Add(8);
-        //    ans.connections.Add(7, l);
-
-        //    l = new List<int>();
-        //    l.Add(11);
-        //    l.Add(3);
-        //    l.Add(4);
-        //    l.Add(7);
-        //    l.Add(9);
-        //    ans.connections.Add(8, l);
-
-        //    l = new List<int>();
-        //    l.Add(11);
-        //    l.Add(4);
-        //    l.Add(5);
-        //    l.Add(8);
-        //    l.Add(10);
-        //    ans.connections.Add(9, l);
-
-        //    l = new List<int>();
-        //    l.Add(11);
-        //    l.Add(5);
-        //    l.Add(1);
-        //    l.Add(9);
-        //    l.Add(6);
-        //    ans.connections.Add(10, l);
-
-        //    l = new List<int>();
-        //    l.Add(6);
-        //    l.Add(7);
-        //    l.Add(8);
-        //    l.Add(9);
-        //    l.Add(10);
-        //    ans.connections.Add(11, l);
-
-        //    return ans;
-        //}
-        //List<Polygon> listIcoPolys(Mesh ico)
-        //{
-        //    List<Polygon> lp = new List<Polygon>();
-        //    List<Point3D> lst = new List<Point3D>();
-        //    lst.Add(new Point3D(ico.points[0]));
-        //    lst.Add(new Point3D(ico.points[1]));
-        //    lst.Add(new Point3D(ico.points[2]));
-        //    lp.Add(new Polygon(lst));
-
-        //    lst = new List<Point3D>();
-        //    lst.Add(new Point3D(ico.points[0]));
-        //    lst.Add(new Point3D(ico.points[2]));
-        //    lst.Add(new Point3D(ico.points[3]));
-        //    lp.Add(new Polygon(lst));
-
-        //    lst = new List<Point3D>();
-        //    lst.Add(new Point3D(ico.points[0]));
-        //    lst.Add(new Point3D(ico.points[3]));
-        //    lst.Add(new Point3D(ico.points[4]));
-        //    lp.Add(new Polygon(lst));
-
-        //    lst = new List<Point3D>();
-        //    lst.Add(new Point3D(ico.points[0]));
-        //    lst.Add(new Point3D(ico.points[4]));
-        //    lst.Add(new Point3D(ico.points[5]));
-        //    lp.Add(new Polygon(lst));
-
-        //    lst = new List<Point3D>();
-        //    lst.Add(new Point3D(ico.points[0]));
-        //    lst.Add(new Point3D(ico.points[5]));
-        //    lst.Add(new Point3D(ico.points[1]));
-        //    lp.Add(new Polygon(lst));
-
-        //    lst = new List<Point3D>();
-        //    lst.Add(new Point3D(ico.points[10]));
-        //    lst.Add(new Point3D(ico.points[11]));
-        //    lst.Add(new Point3D(ico.points[6]));
-        //    lp.Add(new Polygon(lst));
-
-        //    lst = new List<Point3D>();
-        //    lst.Add(new Point3D(ico.points[11]));
-        //    lst.Add(new Point3D(ico.points[7]));
-        //    lst.Add(new Point3D(ico.points[6]));
-        //    lp.Add(new Polygon(lst));
-
-        //    lst = new List<Point3D>();
-        //    lst.Add(new Point3D(ico.points[11]));
-        //    lst.Add(new Point3D(ico.points[8]));
-        //    lst.Add(new Point3D(ico.points[7]));
-        //    lp.Add(new Polygon(lst));
-
-        //    lst = new List<Point3D>();
-        //    lst.Add(new Point3D(ico.points[11]));
-        //    lst.Add(new Point3D(ico.points[9]));
-        //    lst.Add(new Point3D(ico.points[8]));
-        //    lp.Add(new Polygon(lst));
-
-        //    lst = new List<Point3D>();
-        //    lst.Add(new Point3D(ico.points[11]));
-        //    lst.Add(new Point3D(ico.points[10]));
-        //    lst.Add(new Point3D(ico.points[9]));
-        //    lp.Add(new Polygon(lst));
-
-        //    lst = new List<Point3D>();
-        //    lst.Add(new Point3D(ico.points[6]));
-        //    lst.Add(new Point3D(ico.points[1]));
-        //    lst.Add(new Point3D(ico.points[10]));
-        //    lp.Add(new Polygon(lst));
-
-        //    lst = new List<Point3D>();
-        //    lst.Add(new Point3D(ico.points[2]));
-        //    lst.Add(new Point3D(ico.points[6]));
-        //    lst.Add(new Point3D(ico.points[7]));
-        //    lp.Add(new Polygon(lst));
-
-        //    lst = new List<Point3D>();
-        //    lst.Add(new Point3D(ico.points[3]));
-        //    lst.Add(new Point3D(ico.points[7]));
-        //    lst.Add(new Point3D(ico.points[8]));
-        //    lp.Add(new Polygon(lst));
-
-        //    lst = new List<Point3D>();
-        //    lst.Add(new Point3D(ico.points[4]));
-        //    lst.Add(new Point3D(ico.points[8]));
-        //    lst.Add(new Point3D(ico.points[9]));
-        //    lp.Add(new Polygon(lst));
-
-        //    lst = new List<Point3D>();
-        //    lst.Add(new Point3D(ico.points[5]));
-        //    lst.Add(new Point3D(ico.points[9]));
-        //    lst.Add(new Point3D(ico.points[10]));
-        //    lp.Add(new Polygon(lst));
-
-        //    lst = new List<Point3D>();
-        //    lst.Add(new Point3D(ico.points[6]));
-        //    lst.Add(new Point3D(ico.points[2]));
-        //    lst.Add(new Point3D(ico.points[1]));
-        //    lp.Add(new Polygon(lst));
-
-        //    lst = new List<Point3D>();
-        //    lst.Add(new Point3D(ico.points[7]));
-        //    lst.Add(new Point3D(ico.points[3]));
-        //    lst.Add(new Point3D(ico.points[2]));
-        //    lp.Add(new Polygon(lst));
-
-        //    lst = new List<Point3D>();
-        //    lst.Add(new Point3D(ico.points[8]));
-        //    lst.Add(new Point3D(ico.points[4]));
-        //    lst.Add(new Point3D(ico.points[3]));
-        //    lp.Add(new Polygon(lst));
-
-        //    lst = new List<Point3D>();
-        //    lst.Add(new Point3D(ico.points[9]));
-        //    lst.Add(new Point3D(ico.points[5]));
-        //    lst.Add(new Point3D(ico.points[4]));
-        //    lp.Add(new Polygon(lst));
-
-        //    lst = new List<Point3D>();
-        //    lst.Add(new Point3D(ico.points[10]));
-        //    lst.Add(new Point3D(ico.points[1]));
-        //    lst.Add(new Point3D(ico.points[5]));
-        //    lp.Add(new Polygon(lst));
-
-        //    return lp;
-        //}
-        //Mesh Dodecahedron(int scale)
-        //{
-        //    Mesh Ico = Icosahedron(scale);
-        //    List<Polygon> lp = listIcoPolys(Ico);
-
-        //    Mesh ans = new Mesh();
-        //    int counter = 0;
-        //    scale = scale / 2;
-
-        //    foreach (Polygon pol in lp)
-        //    {
-        //        float x = (pol.points[0].X + pol.points[1].X + pol.points[2].X) / 3;
-        //        float y = (pol.points[0].Y + pol.points[1].Y + pol.points[2].Y) / 3;
-        //        float z = (pol.points[0].Z + pol.points[1].Z + pol.points[2].Z) / 3;
-        //        ans.points.Add(new Point3D(x, y, z, counter++));
-        //    }
-
-        //    List<int> l = new List<int>();
-        //    l.Add(4);
-        //    l.Add(1);
-        //    l.Add(15);
-        //    ans.connections.Add(0, l);
-
-        //    l = new List<int>();
-        //    l.Add(0);
-        //    l.Add(2);
-        //    l.Add(16);
-        //    ans.connections.Add(1, l);
-
-        //    l = new List<int>();
-        //    l.Add(1);
-        //    l.Add(3);
-        //    l.Add(17);
-        //    ans.connections.Add(2, l);
-
-        //    l = new List<int>();
-        //    l.Add(2);
-        //    l.Add(4);
-        //    l.Add(18);
-        //    ans.connections.Add(3, l);
-
-        //    l = new List<int>();
-        //    l.Add(3);
-        //    l.Add(0);
-        //    l.Add(19);
-        //    ans.connections.Add(4, l);
-
-        //    l = new List<int>();
-        //    l.Add(9);
-        //    l.Add(6);
-        //    l.Add(10);
-        //    ans.connections.Add(5, l);
-
-        //    l = new List<int>();
-        //    l.Add(5);
-        //    l.Add(7);
-        //    l.Add(11);
-        //    ans.connections.Add(6, l);
-
-        //    l = new List<int>();
-        //    l.Add(6);
-        //    l.Add(8);
-        //    l.Add(12);
-        //    ans.connections.Add(7, l);
-
-        //    l = new List<int>();
-        //    l.Add(7);
-        //    l.Add(9);
-        //    l.Add(13);
-        //    ans.connections.Add(8, l);
-
-        //    l = new List<int>();
-        //    l.Add(8);
-        //    l.Add(5);
-        //    l.Add(14);
-        //    ans.connections.Add(9, l);
-
-        //    l = new List<int>();
-        //    l.Add(19);
-        //    l.Add(15);
-        //    l.Add(5);
-        //    ans.connections.Add(10, l);
-
-        //    l = new List<int>();
-        //    l.Add(15);
-        //    l.Add(16);
-        //    l.Add(6);
-        //    ans.connections.Add(11, l);
-
-        //    l = new List<int>();
-        //    l.Add(16);
-        //    l.Add(17);
-        //    l.Add(7);
-        //    ans.connections.Add(12, l);
-
-        //    l = new List<int>();
-        //    l.Add(17);
-        //    l.Add(18);
-        //    l.Add(8);
-        //    ans.connections.Add(13, l);
-
-        //    l = new List<int>();
-        //    l.Add(18);
-        //    l.Add(19);
-        //    l.Add(9);
-        //    ans.connections.Add(14, l);
-
-        //    l = new List<int>();
-        //    l.Add(10);
-        //    l.Add(11);
-        //    l.Add(0);
-        //    ans.connections.Add(15, l);
-
-        //    l = new List<int>();
-        //    l.Add(11);
-        //    l.Add(12);
-        //    l.Add(1);
-        //    ans.connections.Add(16, l);
-
-        //    l = new List<int>();
-        //    l.Add(12);
-        //    l.Add(13);
-        //    l.Add(2);
-        //    ans.connections.Add(17, l);
-
-        //    l = new List<int>();
-        //    l.Add(13);
-        //    l.Add(14);
-        //    l.Add(3);
-        //    ans.connections.Add(18, l);
-
-        //    l = new List<int>();
-        //    l.Add(14);
-        //    l.Add(10);
-        //    l.Add(4);
-        //    ans.connections.Add(19, l);
-
-        //    return ans;
-        //}
         private void ResetAthene()
         {
             scaleFactorX = 1;
@@ -761,9 +229,6 @@ namespace task7
             ScaleMatrix = AtheneScale(1, 1, 1);
             firstMatrix = AtheneMove((int)(-zeroPoint.X), (int)(-zeroPoint.Y), (int)(-zeroPoint.Z));
             lastMatrix = AtheneMove((int)zeroPoint.X, (int)zeroPoint.Y, (int)zeroPoint.Z);
-
-            rotateAngleL = 0;
-            currotateAngleL = 0;
         }
 
         
@@ -775,6 +240,8 @@ namespace task7
 
         private void drawLocalAxis(Bitmap bm)
         {
+            if (!need_axis)
+                return;
             Graphics g = Graphics.FromImage(bm);
             Color col = Color.Red;
             Pen pen = new Pen(col, 2);
@@ -873,7 +340,7 @@ namespace task7
         private void pictureBox1_MouseMove(object sender, MouseEventArgs e)
         {
             if (!mDown) return;
-            if (at == ActType.Move)
+            if (md == Mode.Move)
             {
                 curtranslateX = 0;
                 curtranslateY = 0;
@@ -918,7 +385,7 @@ namespace task7
 
                 DrawScene(pic);
             }
-            else if (at == ActType.Rotate)
+            else if (md == Mode.Rotate)
             {
                 Point p1 = new Point(pictureBox1.Width / 2 - curP.X, pictureBox1.Height / 2 - curP.Y);
                 Point p2 = new Point(pictureBox1.Width / 2 - e.X, pictureBox1.Height / 2 - e.Y);
@@ -988,7 +455,7 @@ namespace task7
 
                 DrawScene(pic);
             }
-            else if (at == ActType.Scale)
+            else if (md == Mode.Scale)
             {
                 if (curP != e.Location)
                 {
@@ -1050,21 +517,6 @@ namespace task7
             localAxisYorig = new Mesh(localAxisY);
             localAxisZorig = new Mesh(localAxisZ);
             ResetAthene();
-        }
-
-        private void button2_Click(object sender, EventArgs e)
-        {
-            at = ActType.Move;
-        }
-
-        private void button3_Click(object sender, EventArgs e)
-        {
-            at = ActType.Rotate;
-        }
-
-        private void button4_Click(object sender, EventArgs e)
-        {
-            at = ActType.Scale;
         }
 
         private void checkBox1_CheckedChanged(object sender, EventArgs e)
@@ -1146,25 +598,49 @@ namespace task7
             }
 
         }
-        enum ActType { Move = 1, Rotate, Scale }
+        
 
         private void save_button_Click(object sender, EventArgs e)
         {
-            SaveFileDialog saveFileDialog1 = new SaveFileDialog();
-
-            saveFileDialog1.Filter = "obj files (*.obj)|*.obj";
-            saveFileDialog1.FilterIndex = 2;
-            saveFileDialog1.RestoreDirectory = true;
-
-            if (saveFileDialog1.ShowDialog() == DialogResult.OK)
+            var sd = new SaveFileDialog();
+            sd.InitialDirectory = Environment.CurrentDirectory;
+            sd.Filter = "obj files (*.obj)|*.obj";
+            sd.FilterIndex = 2;
+            sd.RestoreDirectory = true;
+            if (sd.ShowDialog() == DialogResult.OK)
             {
-                mesh.Save(saveFileDialog1.FileName);
+                mesh.Save(sd.FileName);
             }
         }
 
         private void load_button_Click(object sender, EventArgs e)
         {
+            var fd = new OpenFileDialog();
+            fd.Filter = "obj files (*.obj)|*.obj";
+            fd.FilterIndex = 2;
+            fd.RestoreDirectory = true;
+            if (fd.ShowDialog() == DialogResult.OK)
+            {
+                meshOrig.Load(fd.FileName);
+                mesh = new Mesh(meshOrig);
+                need_axis = false;
+                DrawScene(pic);
+            }
+        }
 
+        private void moveButton_CheckedChanged(object sender, EventArgs e)
+        {
+            md = Mode.Move;
+        }
+
+        private void rotateButton_CheckedChanged(object sender, EventArgs e)
+        {
+            md = Mode.Rotate;
+        }
+
+        private void ScaleButton_CheckedChanged(object sender, EventArgs e)
+        {
+            md = Mode.Scale;
         }
     }
 }

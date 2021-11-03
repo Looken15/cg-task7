@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using System.Linq;
+using System.Globalization;
 
 namespace task7
 {
@@ -42,9 +44,21 @@ namespace task7
                 return 1;
             }
 
+            public Point3D(string s)
+            {
+                var values = s.Split(' ').ToArray();
+                X = float.Parse(values[0]);
+                Y = float.Parse(values[1]);
+                Z = float.Parse(values[2]);
+                index = int.Parse(values[3]);
+            }
+
             public override string ToString()
             {
-                return X.ToString() + " " + Y.ToString() + " " + Z.ToString() + " " + index.ToString();
+                return X.ToString(CultureInfo.InvariantCulture) + 
+                    " " + Y.ToString(CultureInfo.InvariantCulture) +
+                    " " + Z.ToString(CultureInfo.InvariantCulture) + 
+                    " " + index.ToString(CultureInfo.InvariantCulture);
             }
         }
         public class Edge
@@ -60,6 +74,13 @@ namespace task7
             {
                 p1 = new Point3D();
                 p2 = new Point3D();
+            }
+
+            public Edge(string s)
+            {
+                var points = s.Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
+                p1 = new Point3D(points[0]);
+                p2 = new Point3D(points[1]);
             }
 
             public override string ToString()
@@ -82,6 +103,12 @@ namespace task7
                 {
                     points.Add(p);
                 }
+            }
+
+            public Polygon(string s)
+            {
+                points = s.Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries).
+                    Select(p=>new Point3D(p)).ToList();
             }
 
             public override string ToString()
@@ -158,6 +185,21 @@ namespace task7
             public void Save(string path)
             {
                 File.WriteAllText(path, ToString());
+            }
+
+            public void Load(string fileName)
+            {
+                var values = File.ReadAllText(fileName).Split('|');
+                points = values[0].Split(new char[] { ';' },StringSplitOptions.RemoveEmptyEntries).
+                    Select(p => new Point3D(p)).ToList();
+                connections = new SortedDictionary<int, List<int>>();
+                foreach (var pair in values[1].Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries))
+                {
+                    var lst = pair.Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries).
+                        Select(s => int.Parse(s)).ToList();
+                    var id = lst.First(); lst.RemoveAt(0);
+                    connections[id] = lst;
+                }
             }
         }
     }
