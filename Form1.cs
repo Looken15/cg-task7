@@ -13,7 +13,7 @@ using static task7.Polyhedrons;
 
 namespace task7
 {
-    enum Mode { Move = 1, Rotate, Scale }
+    enum Mode { Move = 1, Rotate, Scale, Draw }
     public partial class Form1 : Form
     {
         Bitmap pic;
@@ -63,6 +63,10 @@ namespace task7
         bool from_c;
         bool need_axis;
         int edit_mode;
+        Color lineColor = Color.Black;
+        List<Point> drawnPoints = new List<Point>();
+        int defaultCounter = 6;
+        int counter = 6;
 
         public Form1()
         {
@@ -79,7 +83,6 @@ namespace task7
             curMesh = "Тетраэдр";
             comboBox1.Text = comboBox1.Items[0].ToString();
             comboBox2.Text = comboBox2.Items[0].ToString();
-            //comboBox2.Text = comboBox2.Items[0].ToString();
             transformAxis = new bool[3] { false, false, false };
             pic = new Bitmap(pictureBox1.Width, pictureBox1.Height);
             pictureBox1.Image = pic;
@@ -231,11 +234,14 @@ namespace task7
             lastMatrix = AtheneMove((int)zeroPoint.X, (int)zeroPoint.Y, (int)zeroPoint.Z);
         }
 
-        
-
         Point ScreenPos(Point3D p)
         {
             return new Point((int)p.X + (int)zeroPoint.X, (int)p.Y + (int)zeroPoint.Y);
+        }
+
+        Point3D FromScreenPos(Point p)
+        {
+            return new Point3D((int)p.X - (int)zeroPoint.X, (int)p.Y - (int)zeroPoint.Y,0,0);
         }
 
         private void drawLocalAxis(Bitmap bm)
@@ -267,10 +273,9 @@ namespace task7
             Graphics g = Graphics.FromImage(bm);
             g.Clear(Color.Transparent);
             drawAxis(bm);
-            Color col = Color.Orange;
-            Color col_1 = Color.DeepPink;
-            Pen pen = new Pen(col, 4);
-            Pen pen_1 = new Pen(col_1, 4);
+            Color col = Color.DeepPink;
+            Pen pen = new Pen(lineColor, 4);
+            Pen pen_1 = new Pen(col, 4);
 
             foreach (Point3D p1 in mesh.points)
             {
@@ -282,7 +287,15 @@ namespace task7
                 }
             }
 
-            if(edit_mode > 0)
+            foreach (var pol in mesh.polygons)
+            {
+                var lst = pol.points.Select(p => new Point((int)p.X,(int)p.Y)).ToArray();
+                //var lst = pol.points.Select(p => ScreenPos(p)).ToArray();
+                g.DrawLines(pen, lst);
+                g.DrawLine(pen, lst[0], lst[lst.Length - 1]);
+            }
+
+            if (edit_mode > 0)
             {
                 foreach (Point3D p1 in rotMesh.points)
                 {
@@ -299,8 +312,39 @@ namespace task7
             pictureBox1.Refresh();
         }
 
+        private void DrawPoint(Point p, Color c, int radius)
+        {
+            var g = Graphics.FromImage(pic);
+            Rectangle r = new Rectangle(p.X - radius, p.Y - radius, radius * 2, radius * 2);
+            SolidBrush br = new SolidBrush(c);
+            g.FillEllipse(br, r);
+        }
+
+        private void DrawLines(List<Point> lst, Color c)
+        {
+            if (lst.Count < 2)
+                return;
+            var g = Graphics.FromImage(pic);
+            g.DrawLines(new Pen(c), lst.ToArray());
+        }
+
+        private void AddPoint(Point p)
+        {
+            drawnPoints.Add(p);
+
+            foreach (var x in drawnPoints)
+                DrawPoint(x, lineColor, 2);
+            DrawLines(drawnPoints, lineColor);
+            pictureBox1.Refresh();
+        }
+
         private void pictureBox1_MouseDown(object sender, MouseEventArgs e)
         {
+            if (md == Mode.Draw)
+            {
+                AddPoint(e.Location);
+                return;
+            }
             curP = e.Location;
             mDown = true;
 
@@ -339,7 +383,7 @@ namespace task7
 
         private void pictureBox1_MouseMove(object sender, MouseEventArgs e)
         {
-            if (!mDown) return;
+            if (!mDown || md == Mode.Draw) return;
             if (md == Mode.Move)
             {
                 curtranslateX = 0;
@@ -599,7 +643,6 @@ namespace task7
 
         }
         
-
         private void save_button_Click(object sender, EventArgs e)
         {
             var sd = new SaveFileDialog();
@@ -641,6 +684,146 @@ namespace task7
         private void ScaleButton_CheckedChanged(object sender, EventArgs e)
         {
             md = Mode.Scale;
+        }
+
+        private void drawButton_CheckedChanged(object sender, EventArgs e)
+        {
+            if (!drawButton.Checked)
+                return;
+            md = Mode.Draw;
+            need_axis = false;
+            defineLocalAxis();
+            ResetAthene();
+            drawnPoints.Clear();
+            mesh = new Mesh();
+            DrawScene(pic); 
+        }
+
+        private void clear_button_Click(object sender, EventArgs e)
+        {
+            drawnPoints.Clear();
+            need_axis = false;
+            defineLocalAxis();
+            ResetAthene();
+            mesh = new Mesh();
+            DrawScene(pic);
+        }
+
+        private void countBox_TextChanged(object sender, EventArgs e)
+        {
+            int count;
+            if (!int.TryParse(countBox.Text,out count))
+            {
+                countBox.Text = defaultCounter.ToString();
+                return;
+            }
+            counter = count;
+        }
+
+        private void mesh_button_Click(object sender, EventArgs e)
+        {
+            if (md != Mode.Draw || drawnPoints.Count < 2||
+                !transformAxis[0] && !transformAxis[1] && !transformAxis[2])
+                return;
+            
+
+            int count_points = 0;
+            var points = drawnPoints;//.Select(p => FromScreenPos(p)).ToList();
+
+            mesh = new Mesh();
+            foreach (var p in points)
+                mesh.points.Add(new Point3D(p.X, p.Y, 0.0f, count_points++));
+
+
+            Mesh rotMesh = new Mesh(mesh);
+            int split = (int)(360.0 / counter);
+            double d_split = split * Math.PI / 180;
+            
+
+
+            double[,] RotateMatrixX = new double[4, 4];
+            double[,] RotateMatrixY = new double[4, 4];
+            double[,] RotateMatrixZ = new double[4, 4];
+
+
+            if (transformAxis[0])
+            {
+                rotateAngleX = d_split;
+                RotateMatrixX = AtheneRotate(rotateAngleX, 'x');
+            }
+            else
+            {
+                RotateMatrixX = AtheneRotate(0, 'x');
+            }
+
+            if (transformAxis[1])
+            {
+                rotateAngleY = d_split;
+                RotateMatrixY = AtheneRotate(rotateAngleY, 'y');
+            }
+            else
+            {
+                RotateMatrixY = AtheneRotate(0, 'y');
+            }
+
+            if (transformAxis[2])
+            {
+                rotateAngleZ = d_split;
+                RotateMatrixZ = AtheneRotate(rotateAngleZ, 'z');
+            }
+            else
+            {
+                RotateMatrixZ = AtheneRotate(0, 'z');
+            }
+
+            //firstMatrix = AtheneMove(-(int)zeroPoint.X, -(int)zeroPoint.Y, -(int)zeroPoint.Z);
+            //lastMatrix = AtheneMove((int)zeroPoint.X, (int)zeroPoint.Y, (int)zeroPoint.Z);
+
+            RotateMatrix = MatrixMult(MatrixMult(RotateMatrixX, RotateMatrixY), RotateMatrixZ);
+            double[,] matr = MatrixMult(MatrixMult(firstMatrix, RotateMatrix), lastMatrix);
+
+            for (int i = 1; i < (360 / split); i++)
+            {
+                AtheneTransform(ref rotMesh, matr);
+
+                //firstMatrix = AtheneMove(0, 0, 0);
+                //lastMatrix = AtheneMove(0, 0, 0);
+
+                for (int j = 0; j < points.Count(); j++)
+                {
+                    rotMesh.points.Add(new Point3D(points[j].X, points[j].Y, 0, count_points));
+                    count_points++;
+
+                    if (j > 0)
+                    {
+                        List<Point3D> lp = new List<Point3D>();
+                        lp.Add(rotMesh.points[(i - 1) * points.Count() + j - 1]);
+                        lp.Add(rotMesh.points[(i - 1) * points.Count() + j]);
+                        lp.Add(rotMesh.points[(i) * points.Count() + j]);
+                        lp.Add(rotMesh.points[(i) * points.Count() + j - 1]);
+                        rotMesh.polygons.Add(new Polygon(lp));
+                    }
+                }
+            }
+
+            for (int j = 0; j < points.Count(); j++)
+            {
+                if (j > 0)
+                {
+                    List<Point3D> lp = new List<Point3D>();
+                    lp.Add(rotMesh.points[0 * points.Count() + j - 1]);
+                    lp.Add(rotMesh.points[0 * points.Count() + j]);
+                    lp.Add(rotMesh.points[((360 / split) - 1) * points.Count() + j]);
+                    lp.Add(rotMesh.points[((360 / split) - 1) * points.Count() + j - 1]);
+                    rotMesh.polygons.Add(new Polygon(lp));
+                }
+            }
+
+            mesh = new Mesh(rotMesh);
+            meshOrig = new Mesh(mesh);
+
+            drawnPoints.Clear();
+            DrawScene(pic);
         }
     }
 }

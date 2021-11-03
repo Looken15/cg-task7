@@ -88,13 +88,18 @@ namespace task7
                 return p1.ToString() + ";" + p2.ToString();
             }
         }
-
         public class Polygon
         {
             public List<Point3D> points;
             public Polygon()
             {
                 points = new List<Point3D>();
+            }
+            public Polygon(Polygon oldP)
+            {
+                points = new List<Point3D>();
+                foreach (var p in oldP.points)
+                    points.Add(new Point3D(p));
             }
             public Polygon(List<Point3D> l)
             {
@@ -124,6 +129,7 @@ namespace task7
         {
             public List<Point3D> points;
             public SortedDictionary<int, List<int>> connections;
+            public List<Polygon> polygons = new List<Polygon>();
             public Mesh()
             {
                 points = new List<Point3D>();
@@ -150,6 +156,7 @@ namespace task7
             {
                 var l = oldM.points;
                 var sd = oldM.connections;
+                var pol = oldM.polygons;
                 points = new List<Point3D>();
                 connections = new SortedDictionary<int, List<int>>();
                 foreach (Point3D p in l)
@@ -162,7 +169,11 @@ namespace task7
                         {
                             temp.Add(pp);
                         }
-                    connections.Add(p.index, temp);
+                    connections[p.index] = temp;
+                }
+                foreach (var p in pol)
+                {
+                    polygons.Add(new Polygon(p));
                 }
             }
 
@@ -179,6 +190,9 @@ namespace task7
                         s.Append(i + ";");
                     s.Append(" ");
                 }
+                s.Append("|");
+                foreach (var pol in polygons)
+                    s.Append(pol.ToString() + "#");
                 return s.ToString();
             }
 
@@ -200,6 +214,8 @@ namespace task7
                     var id = lst.First(); lst.RemoveAt(0);
                     connections[id] = lst;
                 }
+                polygons = values[2].Split(new char[] { '#' }, StringSplitOptions.RemoveEmptyEntries).
+                    Select(s => new Polygon(s)).ToList();
             }
         }
     }

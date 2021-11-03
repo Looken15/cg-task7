@@ -119,6 +119,18 @@ namespace task7
                 p.Y = newp.Y;
                 p.Z = newp.Z;
             }
+            foreach (var pol in mes.polygons)
+            {
+                foreach (var p in pol.points)
+                {
+                    double[,] m1 = new double[1, 4] { { p.X, p.Y, p.Z, 1 } };
+                    double[,] m = MatrixMult(m1, m2);
+                    Point3D newp = new Point3D((float)m[0, 0], (float)m[0, 1], (float)m[0, 2], 0);
+                    p.X = newp.X;
+                    p.Y = newp.Y;
+                    p.Z = newp.Z;
+                }
+            }
         }
     }
 }

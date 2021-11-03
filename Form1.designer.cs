@@ -42,6 +42,11 @@
             this.moveButton = new System.Windows.Forms.RadioButton();
             this.rotateButton = new System.Windows.Forms.RadioButton();
             this.ScaleButton = new System.Windows.Forms.RadioButton();
+            this.drawButton = new System.Windows.Forms.RadioButton();
+            this.clear_button = new System.Windows.Forms.Button();
+            this.countBox = new System.Windows.Forms.TextBox();
+            this.label1 = new System.Windows.Forms.Label();
+            this.mesh_button = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
             this.SuspendLayout();
             // 
@@ -69,7 +74,7 @@
             // checkBox1
             // 
             this.checkBox1.AutoSize = true;
-            this.checkBox1.Location = new System.Drawing.Point(712, 137);
+            this.checkBox1.Location = new System.Drawing.Point(712, 249);
             this.checkBox1.Name = "checkBox1";
             this.checkBox1.Size = new System.Drawing.Size(33, 17);
             this.checkBox1.TabIndex = 9;
@@ -80,7 +85,7 @@
             // checkBox2
             // 
             this.checkBox2.AutoSize = true;
-            this.checkBox2.Location = new System.Drawing.Point(712, 160);
+            this.checkBox2.Location = new System.Drawing.Point(712, 272);
             this.checkBox2.Name = "checkBox2";
             this.checkBox2.Size = new System.Drawing.Size(33, 17);
             this.checkBox2.TabIndex = 10;
@@ -91,7 +96,7 @@
             // checkBox3
             // 
             this.checkBox3.AutoSize = true;
-            this.checkBox3.Location = new System.Drawing.Point(712, 183);
+            this.checkBox3.Location = new System.Drawing.Point(712, 295);
             this.checkBox3.Name = "checkBox3";
             this.checkBox3.Size = new System.Drawing.Size(33, 17);
             this.checkBox3.TabIndex = 11;
@@ -101,7 +106,7 @@
             // 
             // button6
             // 
-            this.button6.Location = new System.Drawing.Point(712, 108);
+            this.button6.Location = new System.Drawing.Point(712, 220);
             this.button6.Name = "button6";
             this.button6.Size = new System.Drawing.Size(83, 23);
             this.button6.TabIndex = 12;
@@ -112,7 +117,7 @@
             // checkBox5
             // 
             this.checkBox5.AutoSize = true;
-            this.checkBox5.Location = new System.Drawing.Point(712, 206);
+            this.checkBox5.Location = new System.Drawing.Point(712, 318);
             this.checkBox5.Name = "checkBox5";
             this.checkBox5.Size = new System.Drawing.Size(82, 17);
             this.checkBox5.TabIndex = 14;
@@ -128,7 +133,7 @@
             "Default mode",
             "Rotation line",
             "Edit rotation line"});
-            this.comboBox2.Location = new System.Drawing.Point(712, 229);
+            this.comboBox2.Location = new System.Drawing.Point(712, 341);
             this.comboBox2.Name = "comboBox2";
             this.comboBox2.Size = new System.Drawing.Size(83, 21);
             this.comboBox2.TabIndex = 17;
@@ -190,11 +195,66 @@
             this.ScaleButton.UseVisualStyleBackColor = true;
             this.ScaleButton.CheckedChanged += new System.EventHandler(this.ScaleButton_CheckedChanged);
             // 
+            // drawButton
+            // 
+            this.drawButton.AutoSize = true;
+            this.drawButton.Location = new System.Drawing.Point(713, 108);
+            this.drawButton.Name = "drawButton";
+            this.drawButton.Size = new System.Drawing.Size(50, 17);
+            this.drawButton.TabIndex = 23;
+            this.drawButton.TabStop = true;
+            this.drawButton.Text = "Draw";
+            this.drawButton.UseVisualStyleBackColor = true;
+            this.drawButton.CheckedChanged += new System.EventHandler(this.drawButton_CheckedChanged);
+            // 
+            // clear_button
+            // 
+            this.clear_button.Location = new System.Drawing.Point(713, 194);
+            this.clear_button.Name = "clear_button";
+            this.clear_button.Size = new System.Drawing.Size(83, 23);
+            this.clear_button.TabIndex = 24;
+            this.clear_button.Text = "Clear";
+            this.clear_button.UseVisualStyleBackColor = true;
+            this.clear_button.Click += new System.EventHandler(this.clear_button_Click);
+            // 
+            // countBox
+            // 
+            this.countBox.Location = new System.Drawing.Point(767, 132);
+            this.countBox.Name = "countBox";
+            this.countBox.Size = new System.Drawing.Size(21, 20);
+            this.countBox.TabIndex = 25;
+            this.countBox.Text = "6";
+            this.countBox.TextChanged += new System.EventHandler(this.countBox_TextChanged);
+            // 
+            // label1
+            // 
+            this.label1.AutoSize = true;
+            this.label1.Location = new System.Drawing.Point(717, 135);
+            this.label1.Name = "label1";
+            this.label1.Size = new System.Drawing.Size(44, 13);
+            this.label1.TabIndex = 26;
+            this.label1.Text = "Counter";
+            // 
+            // mesh_button
+            // 
+            this.mesh_button.Location = new System.Drawing.Point(714, 158);
+            this.mesh_button.Name = "mesh_button";
+            this.mesh_button.Size = new System.Drawing.Size(83, 23);
+            this.mesh_button.TabIndex = 27;
+            this.mesh_button.Text = "Make mesh";
+            this.mesh_button.UseVisualStyleBackColor = true;
+            this.mesh_button.Click += new System.EventHandler(this.mesh_button_Click);
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(800, 450);
+            this.Controls.Add(this.mesh_button);
+            this.Controls.Add(this.label1);
+            this.Controls.Add(this.countBox);
+            this.Controls.Add(this.clear_button);
+            this.Controls.Add(this.drawButton);
             this.Controls.Add(this.ScaleButton);
             this.Controls.Add(this.rotateButton);
             this.Controls.Add(this.moveButton);
@@ -233,6 +293,11 @@
         private System.Windows.Forms.RadioButton moveButton;
         private System.Windows.Forms.RadioButton rotateButton;
         private System.Windows.Forms.RadioButton ScaleButton;
+        private System.Windows.Forms.RadioButton drawButton;
+        private System.Windows.Forms.Button clear_button;
+        private System.Windows.Forms.TextBox countBox;
+        private System.Windows.Forms.Label label1;
+        private System.Windows.Forms.Button mesh_button;
     }
 }
 
