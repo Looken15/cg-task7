@@ -1158,8 +1158,13 @@ namespace task7
 
             if (saveFileDialog1.ShowDialog() == DialogResult.OK)
             {
-
+                mesh.Save(saveFileDialog1.FileName);
             }
+        }
+
+        private void load_button_Click(object sender, EventArgs e)
+        {
+
         }
     }
 }
