@@ -123,9 +123,9 @@ namespace task7
             var p = new List<Point3D>();
             foreach (Polygon pol in lp)
             {
-                float x = (pol.points[0].X + pol.points[1].X + pol.points[2].X) / 3;
-                float y = (pol.points[0].Y + pol.points[1].Y + pol.points[2].Y) / 3;
-                float z = (pol.points[0].Z + pol.points[1].Z + pol.points[2].Z) / 3;
+                double x = (pol.points[0].X + pol.points[1].X + pol.points[2].X) / 3;
+                double y = (pol.points[0].Y + pol.points[1].Y + pol.points[2].Y) / 3;
+                double z = (pol.points[0].Z + pol.points[1].Z + pol.points[2].Z) / 3;
                 p.Add(new Point3D(x, y, z, counter++));
             }
             var c = new SortedDictionary<int, List<int>>();

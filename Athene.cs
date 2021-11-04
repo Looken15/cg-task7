@@ -11,6 +11,39 @@ namespace task7
 {
     public static class Athene
     {
+        public static Point3D zeroPoint;
+
+        public static double scaleFactorX = 1;
+        public static double scaleFactorY = 1;
+        public static double scaleFactorZ = 1;
+        public static double rotateAngleX = 0;
+        public static double rotateAngleY = 0;
+        public static double rotateAngleZ = 0;
+        public static int translateX = 0;
+        public static int translateY = 0;
+        public static int translateZ = 0;
+        public static double[,] MoveMatrix;
+        public static double[,] RotateMatrix;
+        public static double[,] ScaleMatrix;
+        public static double[,] firstMatrix;
+        public static double[,] lastMatrix;
+        public static void ResetAthene()
+        {
+            scaleFactorX = 1;
+            scaleFactorY = 1;
+            scaleFactorZ = 1;
+            rotateAngleX = 0;
+            rotateAngleY = 0;
+            rotateAngleZ = 0;
+            translateX = 0;
+            translateY = 0;
+            translateZ = 0;
+            MoveMatrix = AtheneMove(0, 0, 0);
+            RotateMatrix = AtheneRotate(0, 'x');
+            ScaleMatrix = AtheneScale(1, 1, 1);
+            firstMatrix = AtheneMove(0, 0, 0);
+            lastMatrix = AtheneMove(0, 0, 0);
+        }
         public static double Distance(Point p1, Point p2)
         {
             return Math.Sqrt(Math.Pow(p1.X - p2.X, 2) + Math.Pow(p1.Y - p2.Y, 2));
@@ -119,16 +152,31 @@ namespace task7
                 p.Y = newp.Y;
                 p.Z = newp.Z;
             }
-            foreach (var pol in mes.polygons)
+            foreach (Edge e in mes.edges)
             {
-                foreach (var p in pol.points)
+                double[,] m1 = new double[1, 4] { { e.p1.X, e.p1.Y, e.p1.Z, 1 } };
+                double[,] m = MatrixMult(m1, m2);
+                Point3D newp = new Point3D((float)m[0, 0], (float)m[0, 1], (float)m[0, 2], 0);
+                e.p1.X = newp.X;
+                e.p1.Y = newp.Y;
+                e.p1.Z = newp.Z;
+                m1 = new double[1, 4] { { e.p2.X, e.p2.Y, e.p2.Z, 1 } };
+                m = MatrixMult(m1, m2);
+                newp = new Point3D((float)m[0, 0], (float)m[0, 1], (float)m[0, 2], 0);
+                e.p2.X = newp.X;
+                e.p2.Y = newp.Y;
+                e.p2.Z = newp.Z;
+            }
+            foreach (Polygon p in mes.polygons)
+            {
+                foreach (Point3D p3d in p.points)
                 {
-                    double[,] m1 = new double[1, 4] { { p.X, p.Y, p.Z, 1 } };
+                    double[,] m1 = new double[1, 4] { { p3d.X, p3d.Y, p3d.Z, 1 } };
                     double[,] m = MatrixMult(m1, m2);
                     Point3D newp = new Point3D((float)m[0, 0], (float)m[0, 1], (float)m[0, 2], 0);
-                    p.X = newp.X;
-                    p.Y = newp.Y;
-                    p.Z = newp.Z;
+                    p3d.X = newp.X;
+                    p3d.Y = newp.Y;
+                    p3d.Z = newp.Z;
                 }
             }
         }

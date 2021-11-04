@@ -12,17 +12,26 @@ namespace task7
     {
         public class Point3D : IComparable<Point3D>
         {
-            public float X;
-            public float Y;
-            public float Z;
+            public double X;
+            public double Y;
+            public double Z;
             public int index;
-            public Point3D(float x, float y, float z, int ind)
+            //public Point3D(float x, float y, float z, int ind)
+            //{
+            //    X = x;
+            //    Y = y;
+            //    Z = z;
+            //    index = ind;
+            //}
+
+            public Point3D(double x, double y, double z, int ind)
             {
                 X = x;
                 Y = y;
                 Z = z;
                 index = ind;
             }
+
             public Point3D()
             {
                 X = 0;
@@ -45,25 +54,21 @@ namespace task7
                 return 1;
             }
 
-            public Point ToPoint()
-            {
-                return new Point((int)X, (int)Y);
-            }
-
             public Point3D(string s)
             {
                 var values = s.Split(' ').ToArray();
-                X = float.Parse(values[0]);
-                Y = float.Parse(values[1]);
-                Z = float.Parse(values[2]);
+                var provider = CultureInfo.InvariantCulture;
+                X = double.Parse(values[0], provider);
+                Y = double.Parse(values[1], provider);
+                Z = double.Parse(values[2], provider);
                 index = int.Parse(values[3]);
             }
 
             public override string ToString()
             {
-                return X.ToString(CultureInfo.InvariantCulture) + 
+                return X.ToString(CultureInfo.InvariantCulture) +
                     " " + Y.ToString(CultureInfo.InvariantCulture) +
-                    " " + Z.ToString(CultureInfo.InvariantCulture) + 
+                    " " + Z.ToString(CultureInfo.InvariantCulture) +
                     " " + index.ToString(CultureInfo.InvariantCulture);
             }
         }
@@ -112,14 +117,15 @@ namespace task7
                 points = new List<Point3D>();
                 foreach (Point3D p in l)
                 {
-                    points.Add(p);
+                    Point3D t = new Point3D(p);
+                    points.Add(t);
                 }
             }
 
             public Polygon(string s)
             {
                 points = s.Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries).
-                    Select(p=>new Point3D(p)).ToList();
+                    Select(p => new Point3D(p)).ToList();
             }
 
             public override string ToString()
@@ -131,20 +137,25 @@ namespace task7
             }
         }
 
+
+
         public class Mesh
         {
             public List<Point3D> points;
             public SortedDictionary<int, List<int>> connections;
+            public List<Edge> edges = new List<Edge>();
             public List<Polygon> polygons = new List<Polygon>();
             public Mesh()
             {
                 points = new List<Point3D>();
                 connections = new SortedDictionary<int, List<int>>();
             }
-            public Mesh(List<Point3D> l, SortedDictionary<int, List<int>> sd)
+            public Mesh(List<Point3D> l, SortedDictionary<int, List<int>> sd, List<Edge> le = null, List<Polygon> lp = null)
             {
                 points = new List<Point3D>();
                 connections = new SortedDictionary<int, List<int>>();
+                edges = new List<Edge>();
+                polygons = new List<Polygon>();
                 foreach (Point3D p in l)
                 {
                     Point3D p3D = new Point3D(p);
@@ -155,16 +166,60 @@ namespace task7
                         {
                             temp.Add(pp);
                         }
-                    connections.Add(p.index, temp);
+                    if (!connections.Keys.Contains(p.index)) connections.Add(p.index, temp);
                 }
+                if (le != null && le.Count() == 0)
+                {
+                    int countP = points.Count();
+                    bool[,] flags = new bool[countP, countP];
+
+                    foreach (Point3D p1 in points)
+                    {
+                        int p1ind = p1.index;
+                        foreach (int p2ind in connections[p1ind])
+                        {
+                            if (!flags[p1ind, p2ind])
+                            {
+                                flags[p1ind, p2ind] = true;
+                                flags[p2ind, p1ind] = true;
+                                Point3D t1 = new Point3D(p1);
+                                Point3D t2 = new Point3D(points[p2ind]);
+                                edges.Add(new Edge(t1, t2));
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    if (le != null)
+                    {
+                        foreach (Edge e in le)
+                        {
+                            Point3D t1 = new Point3D(e.p1);
+                            Point3D t2 = new Point3D(e.p2);
+                            edges.Add(new Edge(t1, t2));
+                        }
+                    }
+                }
+                if (lp != null && lp.Count != 0)
+                {
+                    foreach (Polygon p in lp)
+                    {
+                        polygons.Add(new Polygon(p.points));
+                    }
+                }
+
             }
             public Mesh(Mesh oldM)
             {
                 var l = oldM.points;
                 var sd = oldM.connections;
-                var pol = oldM.polygons;
+                var le = oldM.edges;
+                var lp = oldM.polygons;
                 points = new List<Point3D>();
                 connections = new SortedDictionary<int, List<int>>();
+                edges = new List<Edge>();
+                polygons = new List<Polygon>();
                 foreach (Point3D p in l)
                 {
                     Point3D p3D = new Point3D(p);
@@ -175,11 +230,43 @@ namespace task7
                         {
                             temp.Add(pp);
                         }
-                    connections[p.index] = temp;
+                    if (!connections.Keys.Contains(p.index)) connections.Add(p.index, temp);
                 }
-                foreach (var p in pol)
+                if (le.Count() == 0)
                 {
-                    polygons.Add(new Polygon(p));
+                    int countP = points.Count();
+                    bool[,] flags = new bool[countP, countP];
+                    foreach (Point3D p1 in points)
+                    {
+                        int p1ind = p1.index;
+                        foreach (int p2ind in connections[p1ind])
+                        {
+                            if (!flags[p1ind, p2ind])
+                            {
+                                flags[p1ind, p2ind] = true;
+                                flags[p2ind, p1ind] = true;
+                                Point3D t1 = new Point3D(p1);
+                                Point3D t2 = new Point3D(points[p2ind]);
+                                edges.Add(new Edge(t1, t2));
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    foreach (Edge e in le)
+                    {
+                        Point3D t1 = new Point3D(e.p1);
+                        Point3D t2 = new Point3D(e.p2);
+                        edges.Add(new Edge(t1, t2));
+                    }
+                }
+                if (lp.Count != 0)
+                {
+                    foreach (Polygon p in lp)
+                    {
+                        polygons.Add(new Polygon(p.points));
+                    }
                 }
             }
 
@@ -191,7 +278,7 @@ namespace task7
                 s.Append("|");
                 foreach (var pair in connections)
                 {
-                    s.Append(pair.Key+";");
+                    s.Append(pair.Key + ";");
                     foreach (var i in pair.Value)
                         s.Append(i + ";");
                     s.Append(" ");
@@ -210,7 +297,7 @@ namespace task7
             public void Load(string fileName)
             {
                 var values = File.ReadAllText(fileName).Split('|');
-                points = values[0].Split(new char[] { ';' },StringSplitOptions.RemoveEmptyEntries).
+                points = values[0].Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries).
                     Select(p => new Point3D(p)).ToList();
                 connections = new SortedDictionary<int, List<int>>();
                 foreach (var pair in values[1].Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries))
@@ -220,8 +307,9 @@ namespace task7
                     var id = lst.First(); lst.RemoveAt(0);
                     connections[id] = lst;
                 }
-                polygons = values[2].Split(new char[] { '#' }, StringSplitOptions.RemoveEmptyEntries).
-                    Select(s => new Polygon(s)).ToList();
+                if (values.Length >= 3)
+                    polygons = values[2].Split(new char[] { '#' }, StringSplitOptions.RemoveEmptyEntries).
+                        Select(s => new Polygon(s)).ToList();
             }
         }
     }

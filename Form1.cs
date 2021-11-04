@@ -14,6 +14,7 @@ using static task7.Polyhedrons;
 namespace task7
 {
     enum Mode { Move = 1, Rotate, Scale, Draw }
+    enum Projection { Parallel, Perspective }
     public partial class Form1 : Form
     {
         Bitmap pic;
@@ -33,32 +34,36 @@ namespace task7
         Mesh localAxisZorig;
 
         public static Mesh rotMesh;
-        Mesh rotMeshOrig;
 
         double scaleFactorX;
         double scaleFactorY;
         double scaleFactorZ;
-        double curscaleFactorX;
-        double curscaleFactorY;
-        double curscaleFactorZ;
         double rotateAngleX;
-        double currotateAngleX;
         double rotateAngleY;
-        double currotateAngleY;
         double rotateAngleZ;
-        double currotateAngleZ;
         bool[] transformAxis;
         int translateX;
         int translateY;
         int translateZ;
-        int curtranslateX;
-        int curtranslateY;
-        int curtranslateZ;
         double[,] MoveMatrix;
         double[,] RotateMatrix;
         double[,] ScaleMatrix;
         double[,] firstMatrix;
         double[,] lastMatrix;
+        Mesh rotMeshOrig;
+
+        delegate double func(double x, double y);
+        int xsteps;
+        int ysteps;
+        double leftx;
+        double rightx;
+        double lefty;
+        double righty;
+        double MeshStartScale = 40;
+        string selectedStr;
+        Projection prj;
+        const double degr = 45 * Math.PI / 180;
+        bool toggle = true;
 
         bool from_c;
         bool need_axis;
@@ -67,6 +72,11 @@ namespace task7
         List<Point> drawnPoints = new List<Point>();
         int defaultCounter = 6;
         int counter = 6;
+
+        double[,] axonmatr = new double[4, 4] { {Math.Cos(degr), Math.Sin(degr)*Math.Sin(degr),      0,  0},
+                                            {0,              Math.Cos(degr),                     0,  0},
+                                            {Math.Sin(degr), -1 * Math.Cos(degr)*Math.Sin(degr), 0,  0},
+                                            {0,              0,                                  0,  1} };
 
         public Form1()
         {
@@ -100,7 +110,15 @@ namespace task7
             DrawScene(pic);
             form_loaded = true;
             from_c = false;
-
+            leftx = Convert.ToDouble(textBox1.Text);
+            rightx = Convert.ToDouble(textBox2.Text);
+            lefty = Convert.ToDouble(textBox4.Text);
+            righty = Convert.ToDouble(textBox3.Text);
+            xsteps = Convert.ToInt32(textBox6.Text);
+            ysteps = Convert.ToInt32(textBox5.Text);
+            selectedStr = comboBox1.Items[0].ToString();
+            comboBox1.Text = selectedStr;
+            prj = Projection.Parallel;
         }
 
         private void comboBox1_SelectedIndexChanged(object sender, EventArgs e)
@@ -207,36 +225,27 @@ namespace task7
             return ans;
         }
 
-        private void ResetAthene()
+        Point ScreenPosLathe(Point3D p)
         {
-            scaleFactorX = 1;
-            scaleFactorY = 1;
-            scaleFactorZ = 1;
-            curscaleFactorX = 1;
-            curscaleFactorY = 1;
-            curscaleFactorZ = 1;
-            rotateAngleX = 0;
-            currotateAngleX = 0;
-            rotateAngleY = 0;
-            currotateAngleY = 0;
-            rotateAngleZ = 0;
-            currotateAngleZ = 0;
-            translateX = 0;
-            translateY = 0;
-            translateZ = 0;
-            curtranslateX = 0;
-            curtranslateY = 0;
-            curtranslateZ = 0;
-            MoveMatrix = AtheneMove(0, 0, 0);
-            RotateMatrix = AtheneRotate(0, 'x');
-            ScaleMatrix = AtheneScale(1, 1, 1);
-            firstMatrix = AtheneMove((int)(-zeroPoint.X), (int)(-zeroPoint.Y), (int)(-zeroPoint.Z));
-            lastMatrix = AtheneMove((int)zeroPoint.X, (int)zeroPoint.Y, (int)zeroPoint.Z);
+            return new Point((int)p.X + (int)zeroPoint.X, (int)p.Y + (int)zeroPoint.Y);
         }
 
         Point ScreenPos(Point3D p)
         {
-            return new Point((int)p.X + (int)zeroPoint.X, (int)p.Y + (int)zeroPoint.Y);
+            if (prj == Projection.Parallel) return new Point((int)p.X + (int)zeroPoint.X, (int)p.Y + (int)zeroPoint.Y);
+            else if (prj == Projection.Perspective)
+            {
+                Point3D camera = new Point3D(0, 0, -500, 1);
+                double z = p.Z;
+                if (z == 0) z = 0.01;
+                return new Point((int)(p.X / (1 - z / camera.Z)) + (int)zeroPoint.X, (int)(p.Y / (1 - z / camera.Z) + (int)zeroPoint.Y));
+            }
+            else
+            {
+                var l1 = new double[1, 4] { { p.X, p.Y, p.Z, 1 } };
+                var l2 = MatrixMult(MatrixMult(l1, axonmatr), AtheneMove((int)zeroPoint.X, (int)zeroPoint.Y, (int)zeroPoint.Z));
+                return new Point((int)l2[0, 0], (int)l2[0, 1]);
+            }
         }
 
         Point3D FromScreenPos(Point p)
@@ -277,6 +286,8 @@ namespace task7
             Pen pen = new Pen(lineColor, 4);
             Pen pen_1 = new Pen(col, 4);
 
+            Point3D camera = new Point3D(0, 0, -500, 0);
+
             foreach (Point3D p1 in mesh.points)
             {
                 foreach (int p2index in mesh.connections[p1.index])
@@ -290,9 +301,62 @@ namespace task7
 
             foreach (var pol in mesh.polygons)
             {
-                var lst = pol.points.Select(p => ScreenPos(p)).ToArray();
+                var lst = pol.points.Select(p => ScreenPosLathe(p)).ToArray();
                 g.DrawLines(pen, lst);
                 g.DrawLine(pen, lst[0], lst[lst.Length - 1]);
+            }
+
+            foreach (Polygon pol in mesh.polygons)
+            {
+
+                //if (LocPoint(ScreenPos(pol.points[2]), ScreenPos(pol.points[0]), ScreenPos(pol.points[1])) == "Right")
+                //{
+                //    continue;
+                //}
+
+                double xx = 0;
+                double yy = 0;
+                double zz = 0;
+
+                for (int i = 0; i < pol.points.Count; i++)
+                {
+                    xx += pol.points[i].X;
+                    yy += pol.points[i].Y;
+                    zz += pol.points[i].Z;
+                }
+
+                xx = xx / pol.points.Count;
+                yy = yy / pol.points.Count;
+                zz = zz / pol.points.Count;
+
+                Point3D centre = new Point3D(xx, yy, zz, 0);
+
+                Point3D v = Get_Normal(pol.points);
+
+                if (toggle)
+                {
+                    if (!Is_Facing_Camera(new Point3D(0, 0, 1, 0), v))
+                    {
+                        continue;
+                    }
+                }
+                else
+                {
+                    if (!Is_Facing_Camera(new Point3D(centre.X - camera.X, centre.Y - camera.Y, centre.Z - camera.Z, 0), v))
+                    {
+                        continue;
+                    }
+                }
+                for (int i = 0; i < pol.points.Count() - 1; i++)
+                {
+                    Point screenp1 = ScreenPos(pol.points[i]);
+                    Point screenp2 = ScreenPos(pol.points[i + 1]);
+                    g.DrawLine(pen, screenp1, screenp2);
+                }
+
+                Point screenp11 = ScreenPos(pol.points[pol.points.Count() - 1]);
+                Point screenp22 = ScreenPos(pol.points[0]);
+                g.DrawLine(pen, screenp11, screenp22);
             }
 
             if (edit_mode > 0)
@@ -310,6 +374,31 @@ namespace task7
 
             drawLocalAxis(bm);
             pictureBox1.Refresh();
+        }
+
+        Point3D Get_Normal(List<Point3D> polygon)
+        {
+            Point3D v1 = new Point3D(polygon[0].X - polygon[1].X, polygon[0].Y - polygon[1].Y, polygon[0].Z - polygon[1].Z, 0);
+            Point3D v2 = new Point3D(polygon[2].X - polygon[1].X, polygon[2].Y - polygon[1].Y, polygon[2].Z - polygon[1].Z, 1);
+            Point3D normalv = new Point3D(v1.Z * v2.Y - v1.Y * v2.Z, v1.X * v2.Z - v1.Z * v2.X, v1.Y * v2.X - v1.X * v2.Y, 2);
+            //Point3D normalv = new Point3D(v1.Y * v2.Z - v1.Z * v2.Y, v1.Z * v2.X - v1.X * v2.Z, v1.X * v2.Y - v1.Y * v2.X, 2);
+            return Normalized_Vector(normalv);
+        }
+
+        Point3D Normalized_Vector(Point3D v)
+        {
+            double norm = 1 / Math.Sqrt(v.X * v.X + v.Y * v.Y + v.Z * v.Z);
+
+            return (new Point3D(v.X * norm, v.Y * norm, v.Z * norm, 0));
+        }
+
+        bool Is_Facing_Camera(Point3D c, Point3D v)
+        {
+            double a = Math.Sqrt(c.X * c.X + c.Y * c.Y + c.Z * c.Z) * Math.Sqrt(v.X * v.X + v.Y * v.Y + v.Z * v.Z);
+            double b = c.X * v.X + c.Y * v.Y + c.Z * v.Z;
+            double cc = b / a;
+            double d = Math.Acos(cc) * 180 / Math.PI;
+            return ((int)Math.Abs(d)) > 90;
         }
 
         private void DrawPoint(Point p, Color c, int radius)
@@ -386,24 +475,22 @@ namespace task7
             if (!mDown || md == Mode.Draw) return;
             if (md == Mode.Move)
             {
-                curtranslateX = 0;
-                curtranslateY = 0;
-                curtranslateY = 0;
-
                 if (transformAxis[0])
                 {
-                    curtranslateX = e.Location.X - curP.X;
+                    translateX = e.Location.X - curP.X;
                 }
                 if (transformAxis[1])
                 {
-                    curtranslateY = e.Location.Y - curP.Y;
+                    translateY = e.Location.Y - curP.Y;
                 }
                 if (transformAxis[2])
                 {
-                    curtranslateZ = (int)Distance(e.Location, curP);
+                    translateZ = e.Location.Y - curP.Y;
                 }
-
-                MoveMatrix = AtheneMove(curtranslateX + translateX, curtranslateY + translateY, curtranslateZ + translateZ);
+                int t1 = translateX;
+                int t2 = translateY;
+                int t3 = translateZ;
+                MoveMatrix = AtheneMove(translateX, translateY, translateZ);
 
                 if (edit_mode == 2)
                 {
@@ -413,20 +500,9 @@ namespace task7
                     return;
                 }
 
-                double[,] d1 = MatrixMult(MatrixMult(MoveMatrix, ScaleMatrix), RotateMatrix);
-                double[,] matr = MatrixMult(MatrixMult(firstMatrix, d1), lastMatrix);
+                double[,] matr = MatrixMult(MatrixMult(firstMatrix, MoveMatrix), lastMatrix);
                 mesh = new Mesh(meshOrig);
                 AtheneTransform(ref mesh, matr);
-
-                d1 = MatrixMult(MoveMatrix, RotateMatrix);
-                matr = MatrixMult(MatrixMult(firstMatrix, d1), lastMatrix);
-                localAxisX = new Mesh(localAxisXorig);
-                localAxisY = new Mesh(localAxisYorig);
-                localAxisZ = new Mesh(localAxisZorig);
-                AtheneTransform(ref localAxisX, matr);
-                AtheneTransform(ref localAxisY, matr);
-                AtheneTransform(ref localAxisZ, matr);
-
                 DrawScene(pic);
             }
             else if (md == Mode.Rotate)
@@ -438,65 +514,48 @@ namespace task7
                 double[,] RotateMatrixZ = new double[4, 4];
                 if (transformAxis[0])
                 {
-                    currotateAngleX = AngleBetween(p1, p2);
-                    RotateMatrixX = AtheneRotate(rotateAngleX + currotateAngleX, 'x');
-                }
-                else
-                {
+                    rotateAngleX = AngleBetween(p1, p2);
                     RotateMatrixX = AtheneRotate(rotateAngleX, 'x');
                 }
-                if (transformAxis[1])
-                {
-                    currotateAngleY = AngleBetween(p1, p2);
-                    RotateMatrixY = AtheneRotate(rotateAngleY + currotateAngleY, 'y');
-                }
                 else
                 {
-                    RotateMatrixY = AtheneRotate(rotateAngleY, 'y');
-                }
-                if (transformAxis[2])
-                {
-                    currotateAngleZ = AngleBetween(p1, p2);
-                    RotateMatrixZ = AtheneRotate(rotateAngleZ + currotateAngleZ, 'z');
-                }
-                else
-                {
-                    RotateMatrixZ = AtheneRotate(rotateAngleZ, 'z');
+                    RotateMatrixX = AtheneRotate(0, 'x');
                 }
 
-                if (edit_mode == 1)
+                if (transformAxis[1])
                 {
-                    //double[,] matrr = MatrixMult(MatrixMult(firstMatrix, RotateMatrix), lastMatrix);
-                    RotateMatrix = LineRotate(AngleBetween(p1, p2));
+                    rotateAngleY = AngleBetween(p1, p2);
+                    RotateMatrixY = AtheneRotate(rotateAngleY, 'y');
                 }
                 else
                 {
-                    RotateMatrix = MatrixMult(MatrixMult(RotateMatrixX, RotateMatrixY), RotateMatrixZ);
+                    RotateMatrixY = AtheneRotate(0, 'y');
                 }
+
+                if (transformAxis[2])
+                {
+                    rotateAngleZ = AngleBetween(p1, p2);
+                    RotateMatrixZ = AtheneRotate(rotateAngleZ, 'z');
+                }
+                else
+                {
+                    RotateMatrixZ = AtheneRotate(0, 'z');
+                }
+
+                
+
+                RotateMatrix = MatrixMult(MatrixMult(RotateMatrixX, RotateMatrixY), RotateMatrixZ);
 
                 if (edit_mode == 2)
                 {
-
                     rotMesh = new Mesh(rotMeshOrig);
                     AtheneTransform(ref rotMesh, RotateMatrix);
                     DrawScene(pic);
                     return;
                 }
-
-                double[,] d1 = MatrixMult(MatrixMult(MoveMatrix, ScaleMatrix), RotateMatrix);
                 double[,] matr = MatrixMult(MatrixMult(firstMatrix, RotateMatrix), lastMatrix);
                 mesh = new Mesh(meshOrig);
                 AtheneTransform(ref mesh, matr);
-
-                d1 = MatrixMult(MoveMatrix, RotateMatrix);
-                matr = MatrixMult(MatrixMult(firstMatrix, d1), lastMatrix);
-                localAxisX = new Mesh(localAxisXorig);
-                localAxisY = new Mesh(localAxisYorig);
-                localAxisZ = new Mesh(localAxisZorig);
-                AtheneTransform(ref localAxisX, matr);
-                AtheneTransform(ref localAxisY, matr);
-                AtheneTransform(ref localAxisZ, matr);
-
                 DrawScene(pic);
             }
             else if (md == Mode.Scale)
@@ -507,47 +566,29 @@ namespace task7
                     Point graphAnchor = new Point(pictureBox1.Width / 2, pictureBox1.Height / 2);
                     if (curPP.X == graphAnchor.X) curPP.X += 1;
                     if (curPP.Y == graphAnchor.Y) curPP.Y += 1;
-                    curscaleFactorX = scaleFactorX;
-                    curscaleFactorY = scaleFactorY;
-                    curscaleFactorZ = scaleFactorZ;
-
+                    double ss = Distance(e.Location, graphAnchor) / Distance(curPP, graphAnchor);
                     if (transformAxis[0])
                     {
-                        double ss1 = Distance(curPP, graphAnchor) / Distance(e.Location, graphAnchor);
-                        curscaleFactorX = scaleFactorX * ss1;
-                        if (Math.Abs(curscaleFactorX) > 1000) curscaleFactorX = 1000;
+                        scaleFactorX = ss;
+                        if (Math.Abs(scaleFactorX) > 1000) scaleFactorX = 1000;
                     }
                     if (transformAxis[1])
                     {
-                        double ss2 = Distance(curPP, graphAnchor) / Distance(e.Location, graphAnchor);
-                        curscaleFactorY = scaleFactorY * ss2;
-                        if (Math.Abs(curscaleFactorY) > 1000) curscaleFactorY = 1000;
+                        scaleFactorY = ss;
+                        if (Math.Abs(scaleFactorY) > 1000) scaleFactorY = 1000;
                     }
                     if (transformAxis[2])
                     {
-                        double ss3 = Distance(curPP, graphAnchor) / Distance(e.Location, graphAnchor);
-                        curscaleFactorZ = scaleFactorZ * ss3;
-                        if (Math.Abs(curscaleFactorZ) > 1000) curscaleFactorZ = 1000;
+                        scaleFactorZ = ss;
+                        if (Math.Abs(scaleFactorZ) > 1000) scaleFactorZ = 1000;
                     }
 
-                    ScaleMatrix = AtheneScale(1 / curscaleFactorX, 1 / curscaleFactorY, 1 / curscaleFactorZ);
-                    double[,] d1 = MatrixMult(MatrixMult(MoveMatrix, ScaleMatrix), RotateMatrix);
-                    double[,] matr = MatrixMult(MatrixMult(firstMatrix, d1), lastMatrix);
+                    ScaleMatrix = AtheneScale(scaleFactorX, scaleFactorY, scaleFactorZ);
+                    double[,] matr = MatrixMult(MatrixMult(firstMatrix, ScaleMatrix), lastMatrix);
                     mesh = new Mesh(meshOrig);
                     AtheneTransform(ref mesh, matr);
-
-                    d1 = MatrixMult(MoveMatrix, RotateMatrix);
-                    matr = MatrixMult(MatrixMult(firstMatrix, d1), lastMatrix);
-                    localAxisX = new Mesh(localAxisXorig);
-                    localAxisY = new Mesh(localAxisYorig);
-                    localAxisZ = new Mesh(localAxisZorig);
-                    AtheneTransform(ref localAxisX, matr);
-                    AtheneTransform(ref localAxisY, matr);
-                    AtheneTransform(ref localAxisZ, matr);
-
                     DrawScene(pic);
                 }
-
             }
         }
 
@@ -597,8 +638,6 @@ namespace task7
             ScaleMatrix = AtheneScale(scaleFactorX, scaleFactorY, scaleFactorZ);
             mesh = new Mesh(meshOrig);
             AtheneTransform(ref mesh, ScaleMatrix);
-
-            rotMeshOrig = new Mesh(rotMesh);
 
             localAxisX = new Mesh(localAxisXorig);
             localAxisY = new Mesh(localAxisYorig);
@@ -776,8 +815,8 @@ namespace task7
                 RotateMatrixZ = AtheneRotate(0, 'z');
             }
 
-            //firstMatrix = AtheneMove(-(int)zeroPoint.X, -(int)zeroPoint.Y, -(int)zeroPoint.Z);
-            //lastMatrix = AtheneMove((int)zeroPoint.X, (int)zeroPoint.Y, (int)zeroPoint.Z);
+            firstMatrix = AtheneMove(-(int)zeroPoint.X, -(int)zeroPoint.Y, -(int)zeroPoint.Z);
+            lastMatrix = AtheneMove((int)zeroPoint.X, (int)zeroPoint.Y, (int)zeroPoint.Z);
 
             RotateMatrix = MatrixMult(MatrixMult(RotateMatrixX, RotateMatrixY), RotateMatrixZ);
             double[,] matr = MatrixMult(MatrixMult(firstMatrix, RotateMatrix), lastMatrix);
@@ -823,6 +862,117 @@ namespace task7
             meshOrig = new Mesh(mesh);
 
             drawnPoints.Clear();
+            DrawScene(pic);
+        }
+
+        void SelectMesh(string s)
+        {
+            func f = (x, y) => x + y;
+            if (s == "sin(x)+sin(y)")
+            {
+                f = (x, y) => Math.Sin(x) + Math.Sin(y);
+            }
+            if (s == "sin(x)*cos(y)")
+            {
+                f = (x, y) => Math.Sin(x) * Math.Cos(y);
+            }
+            CreateMesh(f, MeshStartScale, leftx, rightx, lefty, righty, xsteps, ysteps);
+        }
+
+        void CreateMesh(func f, double scale, double leftx, double rightx, double lefty, double righty, int xsteps, int ysteps)
+        {
+            Mesh m = new Mesh();
+            int counter = 0;
+            int xlines = xsteps + 1;
+            int ylines = ysteps + 1;
+            double xlen = (rightx - leftx) / (xsteps);
+            double ylen = (righty - lefty) / (ysteps);
+
+            double curX = leftx;
+            double curY = lefty;
+            for (int i = 0; i < xlines; i++)
+            {
+                curY = lefty;
+                for (int j = 0; j < ylines; j++)
+                {
+                    m.points.Add(new Point3D((curX - leftx) * scale, (curY - lefty) * scale, f(curX, curY) * scale, counter++));
+                    if (i > 0)
+                    {
+                        m.edges.Add(new Edge(m.points[(i - 1) * ylines + j], m.points[i * ylines + j]));
+                    }
+                    if (j > 0)
+                    {
+                        m.edges.Add(new Edge(m.points[i * ylines + j - 1], m.points[i * ylines + j]));
+                    }
+                    if (i > 0 && j > 0)
+                    {
+                        List<Point3D> lp = new List<Point3D>();
+                        lp.Add(m.points[(i - 1) * ylines + j - 1]);
+                        lp.Add(m.points[(i - 1) * ylines + j]);
+                        lp.Add(m.points[(i) * ylines + j]);
+                        lp.Add(m.points[(i) * ylines + j - 1]);
+                        m.polygons.Add(new Polygon(lp));
+                    }
+                    curY += ylen;
+                }
+                curX += xlen;
+            }
+            mesh = new Mesh(m);
+            meshOrig = new Mesh(mesh);
+        }
+
+        private void comboBox3_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            selectedStr = comboBox3.Text;
+        }
+
+        private void textBox1_TextChanged(object sender, EventArgs e)
+        {
+            leftx = Convert.ToDouble(textBox1.Text);
+        }
+
+        private void textBox2_TextChanged(object sender, EventArgs e)
+        {
+            rightx = Convert.ToDouble(textBox2.Text);
+        }
+
+        private void textBox4_TextChanged(object sender, EventArgs e)
+        {
+            lefty = Convert.ToDouble(textBox4.Text);
+        }
+
+        private void textBox3_TextChanged(object sender, EventArgs e)
+        {
+            righty = Convert.ToDouble(textBox3.Text);
+        }
+
+        private void textBox6_TextChanged(object sender, EventArgs e)
+        {
+            xsteps = Convert.ToInt32(textBox6.Text);
+        }
+
+        private void textBox5_TextChanged(object sender, EventArgs e)
+        {
+            ysteps = Convert.ToInt32(textBox5.Text);
+        }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            SelectMesh(selectedStr);
+            DrawScene(pic);
+        }
+
+        private void button7_Click(object sender, EventArgs e)
+        {
+            prj = Projection.Parallel;
+            toggle = false;
+            DrawScene(pic);
+        }
+
+        private void button8_Click(object sender, EventArgs e)
+        {
+            prj = Projection.Perspective;
+            toggle = false;
             DrawScene(pic);
         }
     }
