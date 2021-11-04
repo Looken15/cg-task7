@@ -8,3 +8,13 @@ C:\Users\barakuda\source\repos\cg-task7\obj\Debug\task6_new.pdb
 C:\Users\barakuda\source\repos\cg-task7\bin\Debug\task6_new.exe.config
 C:\Users\barakuda\source\repos\cg-task7\bin\Debug\task6_new.exe
 C:\Users\barakuda\source\repos\cg-task7\bin\Debug\task6_new.pdb
+C:\Users\Tema-\Desktop\Универ\4.1\КГ\task7\bin\Debug\task6_new.exe.config
+C:\Users\Tema-\Desktop\Универ\4.1\КГ\task7\bin\Debug\task6_new.exe
+C:\Users\Tema-\Desktop\Универ\4.1\КГ\task7\bin\Debug\task6_new.pdb
+C:\Users\Tema-\Desktop\Универ\4.1\КГ\task7\obj\Debug\task7.csprojAssemblyReference.cache
+C:\Users\Tema-\Desktop\Универ\4.1\КГ\task7\obj\Debug\task7.Form1.resources
+C:\Users\Tema-\Desktop\Универ\4.1\КГ\task7\obj\Debug\task6_new.Properties.Resources.resources
+C:\Users\Tema-\Desktop\Универ\4.1\КГ\task7\obj\Debug\task7.csproj.GenerateResource.cache
+C:\Users\Tema-\Desktop\Универ\4.1\КГ\task7\obj\Debug\task7.csproj.CoreCompileInputs.cache
+C:\Users\Tema-\Desktop\Универ\4.1\КГ\task7\obj\Debug\task6_new.exe
+C:\Users\Tema-\Desktop\Универ\4.1\КГ\task7\obj\Debug\task6_new.pdb

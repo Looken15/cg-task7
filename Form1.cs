@@ -91,7 +91,7 @@ namespace task7
             need_axis = true;
             zeroPoint = new Point3D(pictureBox1.Width / 2, pictureBox1.Height / 2, 0, 0);
             mDown = false;
-            mesh = Tetrahedron(100);
+            mesh = Tetrahedron(200);
             meshOrig = new Mesh(mesh);
             rotMesh = Rot_Edge(100);
             rotMeshOrig = new Mesh(rotMesh);
@@ -100,7 +100,7 @@ namespace task7
             DrawScene(pic);
             form_loaded = true;
             from_c = false;
-            
+
         }
 
         private void comboBox1_SelectedIndexChanged(object sender, EventArgs e)
@@ -119,27 +119,27 @@ namespace task7
         {
             if (curMesh == "Тетраэдр")
             {
-                mesh = Tetrahedron(100);
+                mesh = Tetrahedron(200);
                 meshOrig = new Mesh(mesh);
             }
             else if (curMesh == "Гексаэдр")
             {
-                mesh = Hexahedron(100);
+                mesh = Hexahedron(200);
                 meshOrig = new Mesh(mesh);
             }
             else if (curMesh == "Октаэдр")
             {
-                mesh = Octahedron(100);
+                mesh = Octahedron(200);
                 meshOrig = new Mesh(mesh);
             }
             else if (curMesh == "Икосаэдр")
             {
-                mesh = Icosahedron(100);
+                mesh = Icosahedron(200);
                 meshOrig = new Mesh(mesh);
             }
             else if (curMesh == "Додекаэдр")
             {
-                mesh = Dodecahedron(100);
+                mesh = Dodecahedron(200);
                 meshOrig = new Mesh(mesh);
             }
         }
@@ -241,7 +241,7 @@ namespace task7
 
         Point3D FromScreenPos(Point p)
         {
-            return new Point3D((int)p.X - (int)zeroPoint.X, (int)p.Y - (int)zeroPoint.Y,0,0);
+            return new Point3D((int)p.X - (int)zeroPoint.X, (int)p.Y - (int)zeroPoint.Y, 0, 0);
         }
 
         private void drawLocalAxis(Bitmap bm)
@@ -287,10 +287,10 @@ namespace task7
                 }
             }
 
+
             foreach (var pol in mesh.polygons)
             {
-                var lst = pol.points.Select(p => new Point((int)p.X,(int)p.Y)).ToArray();
-                //var lst = pol.points.Select(p => ScreenPos(p)).ToArray();
+                var lst = pol.points.Select(p => ScreenPos(p)).ToArray();
                 g.DrawLines(pen, lst);
                 g.DrawLine(pen, lst[0], lst[lst.Length - 1]);
             }
@@ -348,7 +348,7 @@ namespace task7
             curP = e.Location;
             mDown = true;
 
-            if(edit_mode == 1)
+            if (edit_mode == 1)
             {
                 firstMatrix = AtheneMove(-(int)rotMesh.points[0].X, -(int)rotMesh.points[0].Y, -(int)rotMesh.points[0].Z);
                 lastMatrix = AtheneMove((int)rotMesh.points[0].X, (int)rotMesh.points[0].Y, (int)rotMesh.points[0].Z);
@@ -464,7 +464,7 @@ namespace task7
                     RotateMatrixZ = AtheneRotate(rotateAngleZ, 'z');
                 }
 
-                if(edit_mode == 1)
+                if (edit_mode == 1)
                 {
                     //double[,] matrr = MatrixMult(MatrixMult(firstMatrix, RotateMatrix), lastMatrix);
                     RotateMatrix = LineRotate(AngleBetween(p1, p2));
@@ -479,7 +479,7 @@ namespace task7
 
                     rotMesh = new Mesh(rotMeshOrig);
                     AtheneTransform(ref rotMesh, RotateMatrix);
-                    DrawScene(pic); 
+                    DrawScene(pic);
                     return;
                 }
 
@@ -636,13 +636,13 @@ namespace task7
                 edit_mode = 2;
             }
 
-            if(form_loaded)
+            if (form_loaded)
             {
                 DrawScene(pic);
             }
 
         }
-        
+
         private void save_button_Click(object sender, EventArgs e)
         {
             var sd = new SaveFileDialog();
@@ -696,7 +696,7 @@ namespace task7
             ResetAthene();
             drawnPoints.Clear();
             mesh = new Mesh();
-            DrawScene(pic); 
+            DrawScene(pic);
         }
 
         private void clear_button_Click(object sender, EventArgs e)
@@ -712,7 +712,7 @@ namespace task7
         private void countBox_TextChanged(object sender, EventArgs e)
         {
             int count;
-            if (!int.TryParse(countBox.Text,out count))
+            if (!int.TryParse(countBox.Text, out count))
             {
                 countBox.Text = defaultCounter.ToString();
                 return;
@@ -722,10 +722,10 @@ namespace task7
 
         private void mesh_button_Click(object sender, EventArgs e)
         {
-            if (md != Mode.Draw || drawnPoints.Count < 2||
+            if (md != Mode.Draw || drawnPoints.Count < 2 ||
                 !transformAxis[0] && !transformAxis[1] && !transformAxis[2])
                 return;
-            
+
 
             int count_points = 0;
             var points = drawnPoints;//.Select(p => FromScreenPos(p)).ToList();
@@ -738,7 +738,7 @@ namespace task7
             Mesh rotMesh = new Mesh(mesh);
             int split = (int)(360.0 / counter);
             double d_split = split * Math.PI / 180;
-            
+
 
 
             double[,] RotateMatrixX = new double[4, 4];

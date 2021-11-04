@@ -4,6 +4,7 @@ using System.IO;
 using System.Text;
 using System.Linq;
 using System.Globalization;
+using System.Drawing;
 
 namespace task7
 {
@@ -42,6 +43,11 @@ namespace task7
                 if (Y < that.Y) return -1;
                 if (X == that.X && Y == that.Y) return 0;
                 return 1;
+            }
+
+            public Point ToPoint()
+            {
+                return new Point((int)X, (int)Y);
             }
 
             public Point3D(string s)
